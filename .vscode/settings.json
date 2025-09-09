@@ -1,0 +1,56 @@
+{
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "editor.formatOnSave": true,
+  "eslint.format.enable": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.format": "explicit",
+    "source.fixAll.stylelint": "explicit",
+    "source.fixAll": "explicit"
+  },
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+  "files.trimFinalNewlines": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "stylelint.vscode-stylelint"
+  },
+  "typescript.disableAutomaticTypeAcquisition": true,
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "errorLens.excludePatterns": [
+    "**/node_modules/**",
+    "**/.next/**"
+  ],
+  "tailwindCSS.experimental.configFile": "src/app/globals.css",
+  "tailwindCSS.classAttributes": [
+    "class",
+    ".*className",
+    ".*Styles*",
+    "color",
+  ],
+  "tailwindCSS.experimental.classRegex": [
+    "cva\\(([^)]*)\\)",
+    "[\"'`]([^\"'`]*).*?[\"'`]",
+    [
+      "cn\\(([^)]*)\\)",
+      "(?:'|\"|`)([^']*)(?:'|\"|`)"
+    ],
+    [
+      "classNames={{([^}]*)}}",
+      "[\"'`]([^\"'`]*).*?[\"'`]"
+    ],
+  ],
+  "tailwindCSS.showPixelEquivalents": true,
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "window.title": "Base wallet backoffice web",
+  "jestrunner.codeLensSelector": "**/*.{test,spec}.{js,jsx,ts,tsx}",
+  "jestrunner.configPath": "jest.config.mjs",
+}
