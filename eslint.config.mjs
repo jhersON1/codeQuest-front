@@ -3,6 +3,7 @@ import { fileURLToPath } from "url"
 import { FlatCompat } from "@eslint/eslintrc"
 import typescriptParser from "@typescript-eslint/parser"
 import typescriptEslint from "@typescript-eslint/eslint-plugin"
+import testingLibrary from "eslint-plugin-testing-library"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -125,6 +126,17 @@ const eslintConfig = [
     rules: {
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
+    },
+  },
+
+  {
+    files: ["**/?(*.)+(spec|test).[jt]s?(x)"],
+    plugins: {
+      "testing-library": testingLibrary,
+    },
+    rules: {
+      "testing-library/no-debugging-utils": "warn",
+      "testing-library/no-container": "error",
     },
   },
 ]
