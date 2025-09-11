@@ -10,7 +10,8 @@
     "format:check": "prettier --check",
     "format:fix": "prettier --write",
     "type-check": "tsc --project tsconfig.json --pretty --noEmit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "npx jest --coverage --logHeapUsage --ci --runInBand --forceExit --detectOpenHandles"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.7",
@@ -26,6 +27,11 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -41,11 +47,17 @@
     "eslint-plugin-tailwindcss": "^4.0.0-alpha.0",
     "eslint-plugin-testing-library": "^7.6.8",
     "husky": "^9.1.7",
+    "jest": "^30.1.3",
+    "jest-environment-jsdom": "^30.1.2",
     "lint-staged": "^16.1.6",
+    "msw": "^2.11.2",
+    "next-router-mock": "^1.0.2",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "tw-animate-css": "^1.3.8",
-    "typescript": "^5"
+    "typescript": "^5",
+    "undici": "^7.16.0"
   }
 }
