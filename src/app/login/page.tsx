@@ -22,14 +22,12 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#151127] via-[#1C1439] to-[#231D3C] p-4">
-      {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-[#833df4]/10 blur-3xl" />
         <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-[#833df4]/5 blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md">
-        {/* Back button */}
         <Link
           href="/"
           className="group mb-8 inline-flex items-center gap-2 text-white/70 transition-colors hover:text-white"
@@ -52,13 +50,6 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* {error && (
-              <Alert className="border-red-500/30 bg-red-500/10 text-red-400">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )} */}
-
             <Alert className="border-[#833df4]/30 bg-[#833df4]/10">
               <AlertCircle className="h-4 w-4 text-[#833df4]" />
               <AlertDescription className="text-white/80">
@@ -96,19 +87,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                // disabled={isLoading}
-                className="w-full"
-              >
-                {/* {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Iniciando sesión...
-                  </div>
-                ) : (
-                  "Iniciar Sesión"
-                )} */}
+              <Button type="submit" className="w-full">
                 Iniciar Sesión
               </Button>
 
@@ -122,19 +101,17 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex w-full items-center border-[#5865F2] bg-[#5865F2] py-3 font-medium text-white transition-all duration-200 hover:bg-[#5865F2]/90"
-                    onClick={() => {
-                      console.log("Iniciar sesión con Discord")
-                    }}
-                  >
-                    <DiscordIcon className="mr-2 h-5 w-5" />
-                    Continuar con Discord
-                  </Button>
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex h-auto w-full flex-wrap border-[#5865F2] bg-[#5865F2] py-3 font-medium text-white transition-all duration-200 hover:bg-[#5865F2]/90"
+                  onClick={() => {
+                    console.log("Iniciar sesión con Discord")
+                  }}
+                >
+                  <DiscordIcon className="mr-2 h-5 w-5" />
+                  Continuar con Discord
+                </Button>
               </div>
             </form>
           </CardContent>
