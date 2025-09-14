@@ -50,7 +50,7 @@
   "editor.quickSuggestions": {
     "strings": true
   },
-  "window.title": "Base wallet backoffice web",
+  "window.title": "Codequest Front",
   "jestrunner.codeLensSelector": "**/*.{test,spec}.{js,jsx,ts,tsx}",
   "jestrunner.configPath": "jest.config.mjs",
 }

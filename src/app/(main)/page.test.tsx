@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react"
 
-import Home from "@/app/page"
+import Home from "@/app/(main)/page"
 
 describe("src/app/page.tsx", () => {
   it("should render ok", () => {
