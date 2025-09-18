@@ -126,6 +126,7 @@ export interface CreatePostDto {
   tagIds?: number[]
   status?: "draft" | "published"
   publishedAt?: string
+  featuredImageUrl?: string
 }
 
 export interface UpdatePostDto {
@@ -136,6 +137,7 @@ export interface UpdatePostDto {
   tagIds?: number[]
   status?: "draft" | "published"
   publishedAt?: string
+  featuredImageUrl?: string
 }
 
 export interface CreateCommentDto {

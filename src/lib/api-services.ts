@@ -112,6 +112,22 @@ export const postsApi = {
   },
 }
 
+// Uploads API
+export const uploadsApi = {
+  uploadImage: async (file: File) => {
+    const fd = new FormData()
+    fd.append("file", file)
+    return api.postForm<{
+      filename: string
+      url: string
+      path: string
+      size: number
+      mimeType: string
+      ext: string
+    }>("/uploads", fd, true)
+  },
+}
+
 // Comments API
 export const commentsApi = {
   list: (query?: ListCommentsQuery) => {

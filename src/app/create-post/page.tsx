@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { postsApi, categoriesApi, tagsApi } from "@/lib/api-services"
+import { postsApi, categoriesApi, tagsApi, uploadsApi } from "@/lib/api-services"
 import type { Category, Tag, CreatePostDto } from "@/lib/api-types"
 import { useAuth } from "@/lib/auth-context"
 
@@ -31,6 +31,8 @@ export default function CreatePostPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -100,6 +102,13 @@ export default function CreatePostPage() {
     }
 
     try {
+      // If a cover image is selected, upload it first
+      if (coverFile) {
+        const res = await uploadsApi.uploadImage(coverFile)
+        if (res?.url) {
+          postData.featuredImageUrl = res.url
+        }
+      }
       const createdPost = await postsApi.create(postData)
       setSuccess(
         submitStatus === "published"
@@ -182,6 +191,32 @@ export default function CreatePostPage() {
                     onChange={(e) => setExcerpt(e.target.value)}
                     placeholder="Breve descripción del post..."
                   />
+                </div>
+
+                {/* Cover Image */}
+                <div className="space-y-2">
+                  <Label htmlFor="cover">Imagen de portada (opcional)</Label>
+                  <input
+                    id="cover"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null
+                      setCoverFile(file)
+                      if (file) setCoverPreview(URL.createObjectURL(file))
+                      else setCoverPreview(null)
+                    }}
+                    className="w-full text-sm text-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-muted file:px-3 file:py-1.5 file:text-foreground file:hover:bg-muted/80"
+                  />
+                  {coverPreview && (
+                    <div className="mt-2">
+                      <img
+                        src={coverPreview}
+                        alt="Vista previa"
+                        className="max-h-56 w-auto rounded-md border border-border object-cover"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

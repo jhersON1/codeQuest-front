@@ -109,6 +109,13 @@ export const api = {
       body: body !== undefined ? JSON.stringify(body) : undefined,
       auth,
     }),
+  // Multipart/form-data POST (no automatic JSON headers)
+  postForm: <T>(path: string, formData: FormData, auth = true) =>
+    apiFetch<T>(path, {
+      method: "POST",
+      body: formData,
+      auth,
+    }),
   patch: <T>(path: string, body?: unknown, auth = true) =>
     apiFetch<T>(path, {
       method: "PATCH",

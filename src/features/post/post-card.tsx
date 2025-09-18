@@ -198,12 +198,25 @@ export function PostCard({ post }: { post: Post }) {
             </h2>
           </Link>
 
+          {post.featured_image_url && (
+            <Link href={`/posts/${post.slug}`}>
+              <img
+                src={post.featured_image_url}
+                alt={post.title}
+                className="mb-3 h-48 w-full rounded-md object-cover"
+              />
+            </Link>
+          )}
+
           {post.excerpt ? (
             <p className="mb-3 line-clamp-3 text-muted-foreground">{post.excerpt}</p>
           ) : (
-            <p className="mb-3 line-clamp-3 text-muted-foreground">
-              {post.body.length > 150 ? post.body.substring(0, 150) + "..." : post.body}
-            </p>
+            <>
+              {/* Si no hay resumen, mostramos un fallback breve del contenido */}
+              <p className="mb-3 line-clamp-3 text-muted-foreground">
+                {post.body.length > 150 ? post.body.substring(0, 150) + "..." : post.body}
+              </p>
+            </>
           )}
 
           {/* Tags */}

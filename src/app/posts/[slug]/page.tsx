@@ -481,6 +481,17 @@ export default function PostDetailPage() {
               </div>
             </div>
 
+            {/* Featured image */}
+            {post.featured_image_url && (
+              <div>
+                <img
+                  src={post.featured_image_url}
+                  alt={post.title}
+                  className="max-h-[480px] w-full rounded-md object-cover"
+                />
+              </div>
+            )}
+
             {/* Post Body */}
             <div className="prose prose-slate max-w-none">
               {post.body.split("\n").map((paragraph, index) => (

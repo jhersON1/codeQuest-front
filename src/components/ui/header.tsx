@@ -97,10 +97,10 @@ function Header() {
             <Link href="/create-post">
               <Button
                 variant="ghost"
-                size="icon"
                 className="rounded-full text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-primary"
               >
-                <Plus className="h-5 w-5" />
+                <Plus className="mr-2 h-5 w-5" />
+                Crear
               </Button>
             </Link>
           )}
