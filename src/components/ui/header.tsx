@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/lib/auth-context"
 
-export function Header() {
+function Header() {
   const { user, logout, loading } = useAuth()
   const [isClient, setIsClient] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -164,3 +164,6 @@ export function Header() {
     </header>
   )
 }
+
+export default Header
+export { Header }

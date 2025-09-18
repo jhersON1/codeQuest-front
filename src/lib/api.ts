@@ -68,12 +68,27 @@ export async function apiFetch<T>(
       if (at) headers2.set("Authorization", `Bearer ${at}`)
       const res2 = await fetch(url, { ...init, headers: headers2 })
       if (!res2.ok) throw new Error(await safeText(res2))
-      return (await res2.json()) as T
+      if (res2.status === 204) return undefined as unknown as T
+      const text2 = await res2.text()
+      if (!text2) return undefined as unknown as T
+      try {
+        return JSON.parse(text2) as T
+      } catch {
+        throw new Error(text2)
+      }
     }
   }
   if (!res.ok) throw new Error(await safeText(res))
   if (res.status === 204) return undefined as unknown as T
-  return (await res.json()) as T
+  // Some endpoints (e.g., DELETE) may return 200 with empty body
+  const text = await res.text()
+  if (!text) return undefined as unknown as T
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    // If not valid JSON, return text as error-like value
+    throw new Error(text)
+  }
 }
 
 async function safeText(res: Response) {

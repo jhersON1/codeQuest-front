@@ -23,6 +23,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { PostCard } from "@/features/post/post-card"
 import { postsApi, commentsApi, reactionsApi, bookmarksApi, viewsApi } from "@/lib/api-services"
 import type { Post, Comment, CreateCommentDto, UpdateCommentDto } from "@/lib/api-types"
 import { useAuth } from "@/lib/auth-context"
@@ -42,6 +43,8 @@ export default function PostDetailPage() {
   const [isLiked, setIsLiked] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [likeCount, setLikeCount] = useState<number>(0)
+  const [likeBusy, setLikeBusy] = useState(false)
 
   // Comment form states
   const [newComment, setNewComment] = useState("")
@@ -49,6 +52,10 @@ export default function PostDetailPage() {
   const [editingComment, setEditingComment] = useState<number | null>(null)
   const [editCommentText, setEditCommentText] = useState("")
   const [commentLoading, setCommentLoading] = useState(false)
+
+  // Related posts
+  const [relatedPosts, setRelatedPosts] = useState<Post[]>([])
+  const [_relatedLoading, setRelatedLoading] = useState(false)
 
   useEffect(() => {
     if (slug) {
@@ -60,17 +67,60 @@ export default function PostDetailPage() {
     if (post) {
       registerView()
       loadComments()
+      loadRelated()
+      // Sync if I already liked/bookmarked this post
+      syncMyReaction()
     }
   }, [post]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const syncMyReaction = async () => {
+    try {
+      if (!user || !post) return
+      const res = await reactionsApi.listMine({
+        page: 1,
+        limit: 1,
+        entityType: "post",
+        entityId: post.post_id,
+        type: "like",
+      })
+      setIsLiked((res.data?.length || 0) > 0)
+    } catch {
+      // silent
+    }
+  }
 
   const loadPost = async () => {
     try {
       const postData = await postsApi.getBySlug(slug)
       setPost(postData)
+      setLikeCount(postData.likeCount || 0)
     } catch (err: any) {
       setError(err?.message || "Post no encontrado")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadRelated = async () => {
+    if (!post) return
+    setRelatedLoading(true)
+    try {
+      const categoryId = post.category?.category_id
+      let data: Post[] = []
+      if (categoryId) {
+        const res = await postsApi.list({ page: 1, limit: 6, categoryId })
+        data = res.data
+      } else if (post.tags && post.tags.length > 0) {
+        // fallback por primer tag
+        const res = await postsApi.list({ page: 1, limit: 6, tagId: post.tags[0].tag_id })
+        data = res.data
+      }
+      setRelatedPosts(data.filter((p) => p.post_id !== post.post_id))
+    } catch (err) {
+      // silencioso
+      console.error("Error loading related posts:", err)
+    } finally {
+      setRelatedLoading(false)
     }
   }
 
@@ -108,32 +158,57 @@ export default function PostDetailPage() {
   }
 
   const handleLike = async () => {
-    if (!user || !post) return
+    if (!user || !post || likeBusy) return
 
     setActionMessage(null)
+    setLikeBusy(true)
+    const startedLiked = isLiked
     try {
       if (isLiked) {
+        // Optimistic update first
+        setIsLiked(false)
+        setLikeCount((c) => Math.max(0, c - 1))
         await reactionsApi.deleteByCombo({
           entityType: "post",
           entityId: post.post_id,
           type: "like",
         })
-        setIsLiked(false)
         setActionMessage("Like eliminado")
       } else {
+        // Optimistic update first
+        setIsLiked(true)
+        setLikeCount((c) => c + 1)
         await reactionsApi.create({
           entityType: "post",
           entityId: post.post_id,
           type: "like",
         })
-        setIsLiked(true)
         setActionMessage("¡Te gusta este post!")
       }
 
       setTimeout(() => setActionMessage(null), 3000)
     } catch (error: any) {
-      setActionMessage(error?.message || "Error al procesar la reacción")
-      setTimeout(() => setActionMessage(null), 3000)
+      const msg = String(error?.message || "Error")
+      const notFound = /404|no encontrada|not found/i.test(msg)
+      if (!notFound) {
+        // Revert optimistic update for other errors
+        if (startedLiked) {
+          // We tried to unlike; restore like
+          setIsLiked(true)
+          setLikeCount((c) => c + 1)
+        } else {
+          // We tried to like; remove like
+          setIsLiked(false)
+          setLikeCount((c) => Math.max(0, c - 1))
+        }
+        setActionMessage(msg || "Error al procesar la reaccion")
+        setTimeout(() => setActionMessage(null), 3000)
+      } else {
+        // Swallow not-found when unliking — state already reflects backend
+        setActionMessage(null)
+      }
+    } finally {
+      setLikeBusy(false)
     }
   }
 
@@ -428,7 +503,7 @@ export default function PostDetailPage() {
                   }`}
                 >
                   <Heart className={`mr-2 h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-                  {post.likeCount || 0}
+                  {likeCount}
                 </Button>
 
                 <Button
@@ -469,6 +544,18 @@ export default function PostDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Related posts */}
+        {relatedPosts.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground">Otros posts de interés</h2>
+            <div className="space-y-4">
+              {relatedPosts.slice(0, 3).map((rp) => (
+                <PostCard key={rp.post_id} post={rp} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Comments Section */}
         <div id="comments" className="space-y-6">

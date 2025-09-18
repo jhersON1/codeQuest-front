@@ -58,7 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authApi.logout()
     } catch {
-      // Ignore errors when logging out
     } finally {
       clearTokens()
       setUser(null)

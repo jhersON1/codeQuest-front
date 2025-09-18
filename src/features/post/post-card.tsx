@@ -2,7 +2,7 @@
 
 import { MessageSquare, Share, Bookmark, Heart, Eye, User } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -14,35 +14,90 @@ export function PostCard({ post }: { post: Post }) {
   const { user } = useAuth()
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState<number>(post.likeCount || 0)
+  const [likeBusy, setLikeBusy] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+
+  // Sync initial liked state from API so the UI reflects server truth
+  useEffect(() => {
+    let cancelled = false
+    const sync = async () => {
+      try {
+        if (user) {
+          const res = await reactionsApi.listMine({
+            page: 1,
+            limit: 1,
+            entityType: "post",
+            entityId: post.post_id,
+            type: "like",
+          })
+          if (!cancelled) setIsLiked((res.data?.length || 0) > 0)
+        } else if (!cancelled) {
+          setIsLiked(false)
+        }
+      } catch {
+        // ignore; keep default false
+      }
+    }
+    sync()
+    return () => {
+      cancelled = true
+    }
+  }, [user, post.post_id])
 
   const handleLike = async () => {
     if (!user) return
+    if (likeBusy) return
     setActionMessage(null)
+    setLikeBusy(true)
+    const startedLiked = isLiked
 
     try {
       if (isLiked) {
+        // Optimistic update
+        setIsLiked(false)
+        setLikeCount((c) => Math.max(0, c - 1))
         await reactionsApi.deleteByCombo({
           entityType: "post",
           entityId: post.post_id,
           type: "like",
         })
-        setIsLiked(false)
         setActionMessage("Like eliminado")
       } else {
+        // Optimistic update
+        setIsLiked(true)
+        setLikeCount((c) => c + 1)
         await reactionsApi.create({
           entityType: "post",
           entityId: post.post_id,
           type: "like",
         })
-        setIsLiked(true)
         setActionMessage("¡Te gusta este post!")
       }
 
       setTimeout(() => setActionMessage(null), 3000)
     } catch (error: any) {
-      setActionMessage(error?.message || "Error al procesar la reacción")
-      setTimeout(() => setActionMessage(null), 3000)
+      const msg = String(error?.message || "Error")
+      const notFound = /404|no encontrada|not found/i.test(msg)
+      if (!notFound) {
+        // Revert optimistic update for other errors
+        if (startedLiked) {
+          // We tried to unlike; restore like
+          setIsLiked(true)
+          setLikeCount((c) => c + 1)
+        } else {
+          // We tried to like; remove like
+          setIsLiked(false)
+          setLikeCount((c) => Math.max(0, c - 1))
+        }
+        setActionMessage(msg || "Error al procesar la reaccion")
+        setTimeout(() => setActionMessage(null), 3000)
+      } else {
+        // Swallow not-found when unliking — state is already correct
+        setActionMessage(null)
+      }
+    } finally {
+      setLikeBusy(false)
     }
   }
 
@@ -185,7 +240,7 @@ export function PostCard({ post }: { post: Post }) {
               }`}
             >
               <Heart className={`mr-2 h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-              {post.likeCount || 0}
+              {likeCount}
             </Button>
 
             <Link href={`/posts/${post.slug}#comments`}>
