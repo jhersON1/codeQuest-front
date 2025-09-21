@@ -2,6 +2,7 @@
 
 import { MessageSquare, Share, Bookmark, Heart, Eye, User } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ import { useAuth } from "@/lib/auth-context"
 
 export function PostCard({ post }: { post: Post }) {
   const { user } = useAuth()
+  const router = useRouter()
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState<number>(post.likeCount || 0)
@@ -45,7 +47,12 @@ export function PostCard({ post }: { post: Post }) {
     }
   }, [user, post.post_id])
 
-  const handleLike = async () => {
+  const stop = (e: React.MouseEvent) => {
+    e.stopPropagation()
+  }
+
+  const handleLike = async (e?: React.MouseEvent) => {
+    if (e) stop(e)
     if (!user) return
     if (likeBusy) return
     setActionMessage(null)
@@ -101,7 +108,8 @@ export function PostCard({ post }: { post: Post }) {
     }
   }
 
-  const handleBookmark = async () => {
+  const handleBookmark = async (e?: React.MouseEvent) => {
+    if (e) stop(e)
     if (!user) return
     setActionMessage(null)
 
@@ -123,7 +131,8 @@ export function PostCard({ post }: { post: Post }) {
     }
   }
 
-  const handleShare = async () => {
+  const handleShare = async (e?: React.MouseEvent) => {
+    if (e) stop(e)
     const url = `${window.location.origin}/posts/${post.slug}`
 
     if (navigator.share) {
@@ -156,7 +165,15 @@ export function PostCard({ post }: { post: Post }) {
   }
 
   return (
-    <Card className="border-border bg-card transition-colors hover:border-primary/50">
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push(`/posts/${post.slug}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") router.push(`/posts/${post.slug}`)
+      }}
+      className="cursor-pointer border-border bg-card transition-colors hover:border-primary/50"
+    >
       <div className="space-y-3 p-4">
         {/* Author info */}
         <div className="flex items-center gap-3 text-sm">
@@ -181,6 +198,7 @@ export function PostCard({ post }: { post: Post }) {
             {post.category && (
               <Link
                 href={`/categories/${post.category.slug}`}
+                onClick={(e) => e.stopPropagation()}
                 className="transition-colors hover:text-primary"
               >
                 {post.category.name}
@@ -192,14 +210,18 @@ export function PostCard({ post }: { post: Post }) {
 
         {/* Post content */}
         <div>
-          <Link href={`/posts/${post.slug}`} className="group block">
+          <Link
+            href={`/posts/${post.slug}`}
+            className="group block"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="mb-2 text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
               {post.title}
             </h2>
           </Link>
 
           {post.featured_image_url && (
-            <Link href={`/posts/${post.slug}`}>
+            <Link href={`/posts/${post.slug}`} onClick={(e) => e.stopPropagation()}>
               <img
                 src={post.featured_image_url}
                 alt={post.title}
@@ -226,6 +248,7 @@ export function PostCard({ post }: { post: Post }) {
                 <Link
                   key={tag.tag_id}
                   href={`/tags/${tag.slug}`}
+                  onClick={(e) => e.stopPropagation()}
                   className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/20"
                 >
                   #{tag.name}
@@ -246,7 +269,7 @@ export function PostCard({ post }: { post: Post }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleLike}
+              onClick={(e) => handleLike(e)}
               disabled={!user}
               className={`text-muted-foreground hover:bg-primary/10 hover:text-primary ${
                 isLiked ? "text-red-500 hover:text-red-600" : ""
@@ -256,7 +279,7 @@ export function PostCard({ post }: { post: Post }) {
               {likeCount}
             </Button>
 
-            <Link href={`/posts/${post.slug}#comments`}>
+            <Link href={`/posts/${post.slug}#comments`} onClick={(e) => e.stopPropagation()}>
               <Button
                 variant="ghost"
                 size="sm"
@@ -279,7 +302,7 @@ export function PostCard({ post }: { post: Post }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleShare}
+              onClick={(e) => handleShare(e)}
               className="text-muted-foreground hover:bg-primary/10 hover:text-primary"
             >
               <Share className="h-4 w-4" />
@@ -288,7 +311,7 @@ export function PostCard({ post }: { post: Post }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleBookmark}
+              onClick={(e) => handleBookmark(e)}
               disabled={!user}
               className={`text-muted-foreground hover:bg-primary/10 hover:text-primary ${
                 isBookmarked ? "text-yellow-500 hover:text-yellow-600" : ""
