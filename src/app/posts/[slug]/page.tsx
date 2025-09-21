@@ -16,7 +16,7 @@ import {
   Trash2,
 } from "lucide-react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -32,6 +32,7 @@ export default function PostDetailPage() {
   const params = useParams()
   const { user } = useAuth()
   const slug = params?.slug as string
+  const router = useRouter()
 
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
@@ -43,6 +44,7 @@ export default function PostDetailPage() {
   const [isLiked, setIsLiked] = useState(false)
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
   const [likeCount, setLikeCount] = useState<number>(0)
   const [likeBusy, setLikeBusy] = useState(false)
 
@@ -351,6 +353,26 @@ export default function PostDetailPage() {
     })
   }
 
+  const canManagePost =
+    !!user && !!post && (user.role === "admin" || user.user_id === post.author?.user_id)
+
+  const handleDeletePost = async () => {
+    if (!post || deleteBusy) return
+    if (!confirm("¿Eliminar este post?")) return
+    try {
+      setDeleteBusy(true)
+      await postsApi.delete(post.post_id)
+      setActionMessage("Post eliminado")
+      setTimeout(() => setActionMessage(null), 2000)
+      router.push("/")
+    } catch (e: any) {
+      setActionMessage(e?.message || "No se pudo eliminar")
+      setTimeout(() => setActionMessage(null), 3000)
+    } finally {
+      setDeleteBusy(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-96 items-center justify-center">
@@ -385,13 +407,23 @@ export default function PostDetailPage() {
           Volver al inicio
         </Link>
 
-        {user && post.author && post.author.user_id === user.user_id && (
+        {canManagePost && (
           <div className="flex gap-2">
             <Button variant="outline" size="sm" asChild>
               <Link href={`/posts/${post.slug}/edit`}>
                 <Edit3 className="mr-2 h-4 w-4" />
                 Editar
               </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10"
+              onClick={handleDeletePost}
+              disabled={deleteBusy}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {deleteBusy ? "Eliminando..." : "Eliminar"}
             </Button>
           </div>
         )}
