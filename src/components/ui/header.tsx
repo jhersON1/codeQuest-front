@@ -83,13 +83,15 @@ function Header() {
         </div>
 
         <div className="mx-8 hidden max-w-xl flex-1 md:block">
-          <div className="relative">
+          <form onSubmit={handleSearch} className="relative">
             <Search className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transform text-muted-foreground" />
             <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar en CodeQuest..."
               className="rounded-full border-border/50 bg-muted/50 py-3 pr-4 pl-12 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
-          </div>
+          </form>
         </div>
 
         <div className="flex items-center gap-1">
