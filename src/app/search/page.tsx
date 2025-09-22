@@ -7,12 +7,11 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PostCard } from "@/features/post/post-card"
-import { postsApi, usersApi } from "@/lib/api-services"
-import type { Post, User } from "@/lib/api-types"
+import { searchApi } from "@/lib/api-services"
+import type { Category, PaginatedResponse, Post, Tag } from "@/lib/api-types"
 
 type SearchResult = {
   posts: Post[]
-  users: User[]
 }
 
 export default function SearchPage() {
@@ -21,16 +20,32 @@ export default function SearchPage() {
 
   const [query, setQuery] = useState(initialQuery)
   const [searchInput, setSearchInput] = useState(initialQuery)
-  const [results, setResults] = useState<SearchResult>({ posts: [], users: [] })
+  const [results, setResults] = useState<SearchResult>({ posts: [] })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(!!initialQuery)
+  const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined)
+  const [selectedTag, setSelectedTag] = useState<number | undefined>(undefined)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [tags, setTags] = useState<Tag[]>([])
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     if (initialQuery) {
       performSearch(initialQuery)
     }
   }, [initialQuery])
+
+  useEffect(() => {
+    import("@/lib/api-services").then(({ categoriesApi, tagsApi }) => {
+      categoriesApi.list({ limit: 50 }).then((res: PaginatedResponse<Category>) => {
+        setCategories(Array.isArray(res.data) ? res.data : [])
+      })
+      tagsApi.list({ limit: 50 }).then((res: PaginatedResponse<Tag>) => {
+        setTags(Array.isArray(res.data) ? res.data : [])
+      })
+    })
+  }, [])
 
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) return
@@ -40,18 +55,27 @@ export default function SearchPage() {
     setHasSearched(true)
 
     try {
-      const [postsRes, usersRes] = await Promise.all([
-        postsApi.list({ search: searchQuery.trim(), limit: 20 }),
-        usersApi.list({ search: searchQuery.trim(), limit: 10 }),
+      const [postsRes] = await Promise.all([
+        searchApi.searchPosts({
+          search: searchQuery.trim(),
+          limit: 20,
+          categoryId: selectedCategory,
+          tagId: selectedTag,
+        }),
       ])
+
+      if (!postsRes) {
+        setResults({
+          posts: [],
+        })
+      }
 
       setResults({
         posts: postsRes.data,
-        users: usersRes.data,
       })
     } catch (e: any) {
       setError(e?.message || "Error al realizar la búsqueda")
-      setResults({ posts: [], users: [] })
+      setResults({ posts: [] })
     } finally {
       setLoading(false)
     }
@@ -69,7 +93,7 @@ export default function SearchPage() {
     }
   }
 
-  const totalResults = results.posts.length + results.users.length
+  const totalResults = results.posts.length
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -77,23 +101,70 @@ export default function SearchPage() {
       <div className="space-y-4">
         <h1 className="text-2xl font-bold text-foreground">Buscar</h1>
 
-        <form onSubmit={handleSearch} className="relative max-w-2xl">
-          <Search className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transform text-muted-foreground" />
+        <form onSubmit={handleSearch} className="flex w-full items-center gap-2">
+          <Search className="mr-2 ml-2 h-5 w-5 text-muted-foreground" />
           <Input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Buscar posts, usuarios..."
-            className="py-3 pr-20 pl-12"
+            className="flex-1 py-3 pl-2"
           />
-          <Button
-            type="submit"
-            size="sm"
-            className="absolute top-1/2 right-2 -translate-y-1/2 transform"
-            disabled={loading}
-          >
+          <Button type="submit" size="sm" className="w-28" disabled={loading}>
             {loading ? "Buscando..." : "Buscar"}
           </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="w-28"
+            onClick={() => setShowFilters((v) => !v)}
+          >
+            Filtros
+          </Button>
         </form>
+
+        {showFilters && (
+          <div className="mt-2 flex gap-4 rounded-lg border bg-background p-4 shadow-md">
+            <div className="w-1/2">
+              <label className="mb-1 block text-sm">Categoría</label>
+              <select
+                className="w-full rounded border bg-[#231d3c] px-2 py-1 text-white"
+                value={selectedCategory ?? ""}
+                onChange={(e) =>
+                  setSelectedCategory(e.target.value ? Number(e.target.value) : undefined)
+                }
+              >
+                <option value="">Todas</option>
+                {categories
+                  .filter((cat) => cat && cat.category_id != null)
+                  .map((cat, idx) => (
+                    <option key={cat.category_id ?? idx} value={cat.category_id}>
+                      {cat.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="w-1/2">
+              <label className="mb-1 block text-sm">Tag</label>
+              <select
+                className="w-full rounded border bg-[#231d3c] px-2 py-1 text-white"
+                value={selectedTag ?? ""}
+                onChange={(e) =>
+                  setSelectedTag(e.target.value ? Number(e.target.value) : undefined)
+                }
+              >
+                <option value="">Todos</option>
+                {tags
+                  .filter((tag) => tag && tag.tag_id != null)
+                  .map((tag, idx) => (
+                    <option key={tag.tag_id ?? idx} value={tag.tag_id}>
+                      {tag.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Results */}
@@ -136,51 +207,6 @@ export default function SearchPage() {
                     <div className="space-y-4">
                       {results.posts.map((post) => (
                         <PostCard key={post.post_id} post={post} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Users Results */}
-                {results.users.length > 0 && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-foreground">
-                      Usuarios ({results.users.length})
-                    </h2>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {results.users.map((user) => (
-                        <div
-                          key={user.user_id}
-                          className="rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/50"
-                        >
-                          <div className="flex items-center gap-3">
-                            {user.avatar_url ? (
-                              <img
-                                src={user.avatar_url}
-                                alt={user.display_name || user.username}
-                                className="h-12 w-12 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
-                                <span className="text-sm font-medium text-primary">
-                                  {(user.display_name || user.username).charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-
-                            <div className="min-w-0 flex-1">
-                              <div className="font-medium text-foreground">
-                                {user.display_name || user.username}
-                              </div>
-                              <div className="text-sm text-muted-foreground">@{user.username}</div>
-                              {user.bio && (
-                                <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                                  {user.bio}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
                       ))}
                     </div>
                   </div>

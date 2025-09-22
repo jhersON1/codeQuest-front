@@ -1,4 +1,5 @@
 import { api } from "./api"
+import { ListPostsQuery } from "./api-types"
 import type {
   User,
   Post,
@@ -23,7 +24,6 @@ import type {
   CreateFollowDto,
   DeleteFollowDto,
   PaginatedResponse,
-  ListPostsQuery,
   ListCommentsQuery,
   ListUsersQuery,
   ListCategoriesQuery,
@@ -51,6 +51,18 @@ const buildQueryParams = (params: Record<string, any>): URLSearchParams => {
   return searchParams
 }
 
+export type SearchPostsQuery = {
+  page?: number
+  limit?: number
+  search?: string
+  categoryId?: number
+  tagId?: number
+  authorId?: string
+  status?: "draft" | "published" | "archived"
+  sortBy?: "created_at" | "updated_at" | "title"
+  sortOrder?: "asc" | "desc"
+}
+
 // Auth API
 export const authApi = {
   login: (data: LoginDto) =>
@@ -75,7 +87,7 @@ export const authApi = {
 // Posts API
 export const postsApi = {
   list: (query?: ListPostsQuery) => {
-    const params = buildQueryParams({
+    const params = buildQueryParams(<Record<keyof ListPostsQuery, any>>{
       page: query?.page ?? 1,
       limit: Math.min(query?.limit ?? 10, 50), // Ensure limit doesn't exceed 50
       search: query?.search,
@@ -109,6 +121,15 @@ export const postsApi = {
     })
 
     return api.get<PaginatedResponse<Post>>(`/posts/me?${params.toString()}`)
+  },
+}
+
+// Search API
+export const searchApi = {
+  searchPosts: async (query: SearchPostsQuery = {}): Promise<PaginatedResponse<Post>> => {
+    const params = buildQueryParams(query)
+
+    return await api.get<PaginatedResponse<Post>>(`/search?${params.toString()}`, false)
   },
 }
 
