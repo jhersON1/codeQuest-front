@@ -136,7 +136,10 @@ export default function LoginPage() {
                   variant="outline"
                   className="flex h-auto w-full flex-wrap border-[#5865F2] bg-[#5865F2] py-3 font-medium text-white transition-all duration-200 hover:bg-[#5865F2]/90"
                   onClick={() => {
-                    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/auth/discord`
+                    const backendUrl = process.env.NEXT_PUBLIC_API_URL
+                    const finalUrl = `${backendUrl}/auth/discord`
+
+                    window.location.href = finalUrl
                   }}
                 >
                   <DiscordIcon className="mr-2 h-5 w-5" />

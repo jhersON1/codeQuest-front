@@ -18,6 +18,7 @@ interface AuthContextType {
   ) => Promise<void>
   logout: () => Promise<void>
   refreshAuth: () => Promise<void>
+  handleOAuthCallback: (tokens: { accessToken: string; refreshToken: string }) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -32,6 +33,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
     })
+    await loadUser()
+  }
+  const handleOAuthCallback = async (tokens: { accessToken: string; refreshToken: string }) => {
+    // 1. Guarda los tokens recibidos
+    setTokens(tokens)
+    // 2. Carga los datos del usuario para actualizar el estado global
     await loadUser()
   }
 
@@ -116,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         refreshAuth,
+        handleOAuthCallback,
       }}
     >
       {children}
