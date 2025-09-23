@@ -56,8 +56,9 @@ export default function AdminPostsPage() {
         page,
         limit,
         search: query || undefined,
-        sortBy: "created_at",
-        sortOrder: "desc",
+        // posts list usa una sola clave `sort`
+        // opciones: 'published_at_desc' | 'published_at_asc' | 'created_at_desc' | 'created_at_asc'
+        sort: "created_at_desc",
       })
       setItems(res.data)
       setTotal(res.meta.total)

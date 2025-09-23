@@ -1,5 +1,5 @@
 import { api } from "./api"
-import { ListPostsQuery } from "./api-types"
+import { type ListPostsQuery } from "./api-types"
 import type {
   User,
   Post,
@@ -55,6 +55,10 @@ export type SearchPostsQuery = {
   page?: number
   limit?: number
   search?: string
+  // Prefer slug filters to match index
+  categorySlug?: string
+  tagSlug?: string
+  // Back-compat numeric ids (not recommended)
   categoryId?: number
   tagId?: number
   authorId?: string
@@ -87,16 +91,23 @@ export const authApi = {
 // Posts API
 export const postsApi = {
   list: (query?: ListPostsQuery) => {
-    const params = buildQueryParams(<Record<keyof ListPostsQuery, any>>{
-      page: query?.page ?? 1,
-      limit: Math.min(query?.limit ?? 10, 50), // Ensure limit doesn't exceed 50
-      search: query?.search,
-      categoryId: query?.categoryId,
-      tagId: query?.tagId,
-      authorId: query?.authorId,
-      status: query?.status,
-      sortBy: query?.sortBy,
-      sortOrder: query?.sortOrder,
+    const q = query || {}
+
+    // Normalize single values to arrays for backend
+    const categoryIds = q.categoryIds ?? (q.categoryId != null ? [q.categoryId] : undefined)
+    const tagIds = q.tagIds ?? (q.tagId != null ? [q.tagId] : undefined)
+
+    const params = buildQueryParams({
+      page: q.page ?? 1,
+      limit: Math.min(q.limit ?? 10, 50),
+      search: q.search,
+      status: q.status,
+      sort: q.sort,
+      // Arrays/slugs supported by backend DTO
+      categoryIds,
+      categorySlugs: q.categorySlugs,
+      tagIds,
+      tagSlugs: q.tagSlugs,
     })
 
     return api.get<PaginatedResponse<Post>>(`/posts?${params.toString()}`, false)
@@ -116,8 +127,7 @@ export const postsApi = {
       limit: Math.min(query?.limit ?? 10, 50),
       search: query?.search,
       status: query?.status,
-      sortBy: query?.sortBy,
-      sortOrder: query?.sortOrder,
+      sort: query?.sort,
     })
 
     return api.get<PaginatedResponse<Post>>(`/posts/me?${params.toString()}`)

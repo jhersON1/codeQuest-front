@@ -1,13 +1,13 @@
 "use client"
 
 import { Search } from "lucide-react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PostCard } from "@/features/post/post-card"
-import { searchApi } from "@/lib/api-services"
+import { searchApi, postsApi } from "@/lib/api-services"
 import type { Category, PaginatedResponse, Post, Tag } from "@/lib/api-types"
 
 type SearchResult = {
@@ -16,7 +16,11 @@ type SearchResult = {
 
 export default function SearchPage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const initialQuery = searchParams.get("q") || ""
+  const initialCategory = searchParams.get("category") || ""
+  const initialTag = searchParams.get("tag") || ""
 
   const [query, setQuery] = useState(initialQuery)
   const [searchInput, setSearchInput] = useState(initialQuery)
@@ -24,17 +28,27 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(!!initialQuery)
-  const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined)
-  const [selectedTag, setSelectedTag] = useState<number | undefined>(undefined)
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
+    initialCategory || undefined
+  )
+  const [selectedTag, setSelectedTag] = useState<string | undefined>(initialTag || undefined)
   const [categories, setCategories] = useState<Category[]>([])
   const [tags, setTags] = useState<Tag[]>([])
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
-    if (initialQuery) {
+    if (initialQuery || initialCategory || initialTag) {
       performSearch(initialQuery)
     }
-  }, [initialQuery])
+  }, [initialQuery, initialCategory, initialTag])
+
+  // Keep selected filters in sync with URL params
+  useEffect(() => {
+    setSelectedCategory(initialCategory || undefined)
+  }, [initialCategory])
+  useEffect(() => {
+    setSelectedTag(initialTag || undefined)
+  }, [initialTag])
 
   useEffect(() => {
     import("@/lib/api-services").then(({ categoriesApi, tagsApi }) => {
@@ -47,32 +61,34 @@ export default function SearchPage() {
     })
   }, [])
 
-  const performSearch = async (searchQuery: string) => {
-    if (!searchQuery.trim()) return
+  const performSearch = async (searchQuery: string, nextCategory?: string, nextTag?: string) => {
+    const q = searchQuery.trim()
+    const cat = nextCategory ?? selectedCategory
+    const tag = nextTag ?? selectedTag
 
     setLoading(true)
     setError(null)
     setHasSearched(true)
 
     try {
-      const [postsRes] = await Promise.all([
-        searchApi.searchPosts({
-          search: searchQuery.trim(),
+      if (q) {
+        const postsRes = await searchApi.searchPosts({
+          search: q,
           limit: 20,
-          categoryId: selectedCategory,
-          tagId: selectedTag,
-        }),
-      ])
-
-      if (!postsRes) {
-        setResults({
-          posts: [],
+          categorySlug: cat,
+          tagSlug: tag,
         })
+        setResults({ posts: postsRes?.data ?? [] })
+      } else {
+        const listRes = await postsApi.list({
+          page: 1,
+          limit: 20,
+          categorySlugs: cat ? [cat] : undefined,
+          tagSlugs: tag ? [tag] : undefined,
+          sort: "published_at_desc",
+        })
+        setResults({ posts: listRes?.data ?? [] })
       }
-
-      setResults({
-        posts: postsRes.data,
-      })
     } catch (e: any) {
       setError(e?.message || "Error al realizar la búsqueda")
       setResults({ posts: [] })
@@ -83,14 +99,31 @@ export default function SearchPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchInput.trim()) {
-      setQuery(searchInput.trim())
-      performSearch(searchInput.trim())
+    const q = searchInput.trim()
+    setQuery(q)
+    setHasSearched(true)
+    performSearch(q)
 
-      // Update URL
-      const newUrl = `/search?q=${encodeURIComponent(searchInput.trim())}`
-      window.history.pushState({}, "", newUrl)
-    }
+    // Update URL (include filters)
+    const params = new URLSearchParams()
+    if (q) params.set("q", q)
+    if (selectedCategory) params.set("category", selectedCategory)
+    if (selectedTag) params.set("tag", selectedTag)
+    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname
+    router.replace(newUrl)
+  }
+
+  const applyFilterChange = (nextCategory?: string, nextTag?: string) => {
+    const q = searchInput.trim()
+    setHasSearched(true)
+    performSearch(q, nextCategory, nextTag)
+    const params = new URLSearchParams()
+    if (q) params.set("q", q)
+    // Always use the provided next values as the new source of truth
+    if (nextCategory) params.set("category", nextCategory)
+    if (nextTag) params.set("tag", nextTag)
+    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname
+    router.replace(newUrl)
   }
 
   const totalResults = results.posts.length
@@ -130,15 +163,17 @@ export default function SearchPage() {
               <select
                 className="w-full rounded border bg-[#231d3c] px-2 py-1 text-white"
                 value={selectedCategory ?? ""}
-                onChange={(e) =>
-                  setSelectedCategory(e.target.value ? Number(e.target.value) : undefined)
-                }
+                onChange={(e) => {
+                  const next = e.target.value || undefined
+                  setSelectedCategory(next)
+                  applyFilterChange(next, selectedTag)
+                }}
               >
-                <option value="">Todas</option>
+                <option value="">Todas (sin filtro)</option>
                 {categories
-                  .filter((cat) => cat && cat.category_id != null)
+                  .filter((cat) => cat && cat.slug)
                   .map((cat, idx) => (
-                    <option key={cat.category_id ?? idx} value={cat.category_id}>
+                    <option key={cat.slug ?? idx} value={cat.slug}>
                       {cat.name}
                     </option>
                   ))}
@@ -149,15 +184,17 @@ export default function SearchPage() {
               <select
                 className="w-full rounded border bg-[#231d3c] px-2 py-1 text-white"
                 value={selectedTag ?? ""}
-                onChange={(e) =>
-                  setSelectedTag(e.target.value ? Number(e.target.value) : undefined)
-                }
+                onChange={(e) => {
+                  const next = e.target.value || undefined
+                  setSelectedTag(next)
+                  applyFilterChange(selectedCategory, next)
+                }}
               >
-                <option value="">Todos</option>
+                <option value="">Todos (sin filtro)</option>
                 {tags
-                  .filter((tag) => tag && tag.tag_id != null)
+                  .filter((tag) => tag && tag.slug)
                   .map((tag, idx) => (
-                    <option key={tag.tag_id ?? idx} value={tag.tag_id}>
+                    <option key={tag.slug ?? idx} value={tag.slug}>
                       {tag.name}
                     </option>
                   ))}

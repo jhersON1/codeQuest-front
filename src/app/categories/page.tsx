@@ -34,7 +34,7 @@ export default function CategoriesPage() {
         {items.map((c) => (
           <li key={c.category_id} className="rounded-md border border-border bg-card p-4">
             <Link
-              href={`/categories/${c.slug}`}
+              href={`/search?category=${c.slug}`}
               className="font-medium text-primary hover:underline"
             >
               {c.name}

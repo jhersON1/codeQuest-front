@@ -44,7 +44,7 @@ export default async function MainLayout({ children }: Readonly<{ children: Reac
                   categories.map((c) => (
                     <Link
                       key={c.category_id}
-                      href={`/categories/${c.slug}`}
+                      href={`/search?category=${c.slug}`}
                       className="truncate text-foreground hover:text-primary hover:underline"
                       title={c.name}
                     >
@@ -64,7 +64,7 @@ export default async function MainLayout({ children }: Readonly<{ children: Reac
                   tags.map((t) => (
                     <Link
                       key={t.tag_id}
-                      href={`/tags/${t.slug}`}
+                      href={`/search?tag=${t.slug}`}
                       className="truncate text-foreground hover:text-primary hover:underline"
                       title={t.name}
                     >

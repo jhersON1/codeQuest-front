@@ -107,14 +107,14 @@ export default function PostDetailPage() {
     if (!post) return
     setRelatedLoading(true)
     try {
-      const categoryId = post.category?.category_id
+      const categorySlug = post.category?.slug
       let data: Post[] = []
-      if (categoryId) {
-        const res = await postsApi.list({ page: 1, limit: 6, categoryId })
+      if (categorySlug) {
+        const res = await postsApi.list({ page: 1, limit: 6, categorySlugs: [categorySlug] })
         data = res.data
       } else if (post.tags && post.tags.length > 0) {
-        // fallback por primer tag
-        const res = await postsApi.list({ page: 1, limit: 6, tagId: post.tags[0].tag_id })
+        // fallback por primer tag (slug)
+        const res = await postsApi.list({ page: 1, limit: 6, tagSlugs: [post.tags[0].slug] })
         data = res.data
       }
       setRelatedPosts(data.filter((p) => p.post_id !== post.post_id))
