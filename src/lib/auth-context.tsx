@@ -28,57 +28,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const login = async (username: string, password: string) => {
-    console.log("Login tradicional iniciado para:", username)
     const response = await authApi.login({ username, password })
-    console.log("Login response received:", {
-      hasAccessToken: !!response.accessToken,
-      hasRefreshToken: !!response.refreshToken,
-    })
-
     setTokens({
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
     })
-
     await loadUser()
-    console.log("Login tradicional completado")
   }
   const handleOAuthCallback = async (tokens: { accessToken: string; refreshToken: string }) => {
     try {
-      console.log("Iniciando OAuth callback con tokens:", {
-        hasAccessToken: !!tokens.accessToken,
-        hasRefreshToken: !!tokens.refreshToken,
-      })
-
-      // Establecer loading temporalmente
-      setLoading(true)
-
-      // 1. Guarda los tokens recibidos
+      console.log("OAuth: guardando tokens y cargando usuario")
       setTokens(tokens)
-
-      // 2. Pequeña pausa para asegurar que los tokens se guardaron
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      // 3. Carga los datos del usuario para actualizar el estado global
-      console.log("Cargando datos del usuario...")
       const userData = await authApi.getCurrentUser()
-      console.log("Datos del usuario obtenidos:", {
-        userId: userData.user_id,
-        username: userData.username,
-      })
-
-      // 4. Actualizar el estado del usuario
       setUser(userData)
-      console.log("Usuario OAuth establecido exitosamente")
+      console.log("OAuth: usuario establecido", userData.username)
     } catch (error) {
-      console.error("Error en handleOAuthCallback:", error)
-      // Si hay error, limpia los tokens y no dejes al usuario en estado inconsistente
+      console.error("OAuth error:", error)
       clearTokens()
       setUser(null)
       throw error
-    } finally {
-      // Siempre establecer loading como false al final
-      setLoading(false)
     }
   }
 
@@ -113,29 +81,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUser = async () => {
     try {
-      console.log("loadUser: iniciando carga de usuario...")
       const storedTokens = getStoredTokens()
-      console.log("loadUser: tokens almacenados:", {
-        hasAccessToken: !!storedTokens.accessToken,
-        hasRefreshToken: !!storedTokens.refreshToken,
-      })
-
       if (storedTokens.accessToken) {
-        // Obtener información real del usuario desde el backend
-        console.log("loadUser: obteniendo datos del usuario desde API...")
         const userData = await authApi.getCurrentUser()
-        console.log("loadUser: datos del usuario obtenidos:", {
-          userId: userData.user_id,
-          username: userData.username,
-        })
         setUser(userData)
-        console.log("loadUser: estado del usuario actualizado")
       } else {
-        console.log("loadUser: no hay access token, estableciendo usuario como null")
         setUser(null)
       }
     } catch (error) {
-      console.error("loadUser: Error cargando usuario:", error)
+      console.error("Error loading user:", error)
       clearTokens()
       setUser(null)
     }
