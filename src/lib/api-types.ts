@@ -201,12 +201,17 @@ export interface ListPostsQuery {
   page?: number
   limit?: number
   search?: string
+  // Prefer arrays/slugs to match backend DTO
+  categoryIds?: number[]
+  categorySlugs?: string[]
+  tagIds?: number[]
+  tagSlugs?: string[]
+  // Back-compat single selectors (will be mapped to arrays)
   categoryId?: number
   tagId?: number
-  authorId?: string
   status?: "draft" | "published" | "archived"
-  sortBy?: "created_at" | "updated_at" | "title"
-  sortOrder?: "asc" | "desc"
+  // Sort options supported by backend posts list
+  sort?: "published_at_desc" | "published_at_asc" | "created_at_desc" | "created_at_asc"
 }
 
 export interface ListCommentsQuery {

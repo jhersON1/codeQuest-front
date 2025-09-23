@@ -247,7 +247,7 @@ export function PostCard({ post }: { post: Post }) {
               {post.tags.slice(0, 3).map((tag) => (
                 <Link
                   key={tag.tag_id}
-                  href={`/tags/${tag.slug}`}
+                  href={`/search?tag=${tag.slug}`}
                   onClick={(e) => e.stopPropagation()}
                   className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs text-primary transition-colors hover:bg-primary/20"
                 >

@@ -33,7 +33,10 @@ export default function TagsPage() {
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((t) => (
           <li key={t.tag_id} className="rounded-md border border-border bg-card p-4">
-            <Link href={`/tags/${t.slug}`} className="font-medium text-primary hover:underline">
+            <Link
+              href={`/search?tag=${t.slug}`}
+              className="font-medium text-primary hover:underline"
+            >
               {t.name}
             </Link>
             <div className="text-xs text-muted-foreground">#{t.slug}</div>
