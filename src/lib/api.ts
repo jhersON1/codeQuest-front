@@ -17,11 +17,20 @@ function getStoredTokens(): Tokens {
 
 export function setTokens(tokens: Tokens) {
   if (typeof window === "undefined") return
+
   accessToken = tokens.accessToken
-  if (tokens.accessToken) window.localStorage.setItem("cq_access_token", tokens.accessToken)
-  else window.localStorage.removeItem("cq_access_token")
-  if (tokens.refreshToken) window.localStorage.setItem("cq_refresh_token", tokens.refreshToken)
-  else window.localStorage.removeItem("cq_refresh_token")
+
+  if (tokens.accessToken) {
+    window.localStorage.setItem("cq_access_token", tokens.accessToken)
+  } else {
+    window.localStorage.removeItem("cq_access_token")
+  }
+
+  if (tokens.refreshToken) {
+    window.localStorage.setItem("cq_refresh_token", tokens.refreshToken)
+  } else {
+    window.localStorage.removeItem("cq_refresh_token")
+  }
 }
 
 export function clearTokens() {

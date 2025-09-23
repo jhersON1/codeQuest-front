@@ -18,6 +18,7 @@ interface AuthContextType {
   ) => Promise<void>
   logout: () => Promise<void>
   refreshAuth: () => Promise<void>
+  handleOAuthCallback: (tokens: { accessToken: string; refreshToken: string }) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -33,6 +34,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshToken: response.refreshToken,
     })
     await loadUser()
+  }
+  const handleOAuthCallback = async (tokens: { accessToken: string; refreshToken: string }) => {
+    try {
+      console.log("OAuth: guardando tokens y cargando usuario")
+      setTokens(tokens)
+      const userData = await authApi.getCurrentUser()
+      setUser(userData)
+      console.log("OAuth: usuario establecido", userData.username)
+    } catch (error) {
+      console.error("OAuth error:", error)
+      clearTokens()
+      setUser(null)
+      throw error
+    }
   }
 
   const register = async (
@@ -68,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const storedTokens = getStoredTokens()
       if (storedTokens.accessToken) {
-        // Obtener información real del usuario desde el backend
         const userData = await authApi.getCurrentUser()
         setUser(userData)
       } else {
@@ -116,6 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         refreshAuth,
+        handleOAuthCallback,
       }}
     >
       {children}

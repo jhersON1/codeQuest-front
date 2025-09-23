@@ -75,9 +75,32 @@ export const authApi = {
   register: (data: RegisterDto) =>
     api.post<{ accessToken: string; refreshToken: string }>("/auth/register", data, false),
 
-  refresh: () => api.post<{ accessToken: string; refreshToken: string }>("/auth/refresh"),
+  // Refresh, logout need refresh token in Authorization header
+  refresh: async () => {
+    const rt =
+      typeof window !== "undefined" ? window.localStorage.getItem("cq_refresh_token") : null
+    if (!rt) throw new Error("Missing refresh token")
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+    const res = await fetch(`${apiUrl}/auth/refresh`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${rt}` },
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return (await res.json()) as { accessToken: string; refreshToken: string }
+  },
 
-  logout: () => api.post<{ revoked: number }>("/auth/logout"),
+  logout: async () => {
+    const rt =
+      typeof window !== "undefined" ? window.localStorage.getItem("cq_refresh_token") : null
+    if (!rt) return { revoked: 0 }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+    const res = await fetch(`${apiUrl}/auth/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${rt}` },
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return (await res.json()) as { revoked: number }
+  },
 
   logoutAll: () => api.post<{ revoked: number }>("/auth/logout-all"),
 

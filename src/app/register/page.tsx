@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { authApi } from "@/lib/api-services"
 import { useAuth } from "@/lib/auth-context"
 
 export default function RegisterPage() {
@@ -204,7 +205,8 @@ export default function RegisterPage() {
                   variant="outline"
                   className="flex h-auto w-full flex-wrap border-[#5865F2] bg-[#5865F2] py-3 font-medium text-white transition-all duration-200 hover:bg-[#5865F2]/90"
                   onClick={() => {
-                    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/auth/discord`
+                    // Centralized to ensure consistent backend URL handling
+                    authApi.discordLogin()
                   }}
                 >
                   <DiscordIcon className="mr-2 h-5 w-5" />
